@@ -21,32 +21,20 @@ class MyFileEventHandler(FileSystemEventHandler):
         self.sort_file(event.src_path)
 
     def sort_file(self, file_path):
-        # Check for document files
         if file_path.endswith((".txt", ".pdf", ".docx")):
             self.process_files(file_path, downloaded_docs_folder)
-
-        # Check for image files
         elif file_path.endswith((".jpg", ".jpeg", ".png")):
             self.process_files(file_path, downloaded_images_folder)
-
-        # Check for video files
         elif file_path.endswith((".mp4", ".mkv")):
             self.process_files(file_path, downloaded_videos_folder)
-
-        # Check for audio files
         elif file_path.endswith((".mp3", ".wav")):
             self.process_files(file_path, downloaded_audio_folder)
-
-        # Check for archive files
         elif file_path.endswith((".zip", ".rar")):
             self.process_files(file_path, downloaded_archives_folder)
-            
-        # Check for software files
         elif file_path.endswith((".exe")):
             self.process_files(file_path, downloaded_software_folder)
-                               
         else:
-            self.process_files(file_path, downloaded_dumps)    
+            self.process_files(file_path, downloaded_dumps)
 
     def process_files(self, file_path, organized_folder):
         if not os.path.exists(organized_folder):
@@ -64,24 +52,27 @@ class MyFileEventHandler(FileSystemEventHandler):
                 destination_filepath = os.path.join(organized_folder, new_name)
                 counter += 1
 
+        # This handles the problem where the file is still downloading and still in use 
+        while True:
+            try:
+                shutil.move(file_path, destination_filepath)
+                break  # Exit the loop if the move is successful
+            except PermissionError:
+                print(f"File is in use, retrying: {file_path}")
+                time.sleep(1)  # Wait for 1 second before retrying
 
-        shutil.move(file_path, destination_filepath)
 
 
-def continuously_sort_files():
-    """Continuously sort files in the folder."""
+def continuously_sort_files(): 
     while True:
         for file_name in os.listdir(folder_path):
             file_path = os.path.join(folder_path, file_name)
 
-            # Check only files, not subdirectories
             if os.path.isfile(file_path):
                 event_handler.sort_file(file_path)
-
-        # Check every 5 seconds
         time.sleep(5)
 
-
+# Main script
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(message)s",
@@ -100,5 +91,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
-
-
